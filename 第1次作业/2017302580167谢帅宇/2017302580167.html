@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>计算机图形学第一次作业</title>
+	</head>
+	<body>
+		<canvas id="webgl" width="700" height="700" style="background-color: #0d72da"></canvas>
+		
+		<!-- 顶点着色器源码 -->
+		<script id="vertexShader" type="x-shader/x-vertex">
+			//attribute声明vec4类型变量apos
+			attribute vec4 a_Position;
+			//attribute声明顶点颜色变量
+			attribute vec4 a_color;
+			/**用于光照计算的变量a_normal、u_lightColor**/
+			attribute vec4 a_normal; //法向量变量
+			uniform vec3 u_lightColor; //uniform声明平行光颜色变量
+			uniform vec3 u_lightDirection; //平行光方向
+			/**uniform声明旋转矩阵变量mx、my**/
+			uniform mat4 scale;//缩放矩阵
+			uniform mat4 Tx;//平移矩阵Tx
+			uniform mat4 mx;//绕x轴旋转矩阵
+			uniform mat4 my;//绕y轴旋转矩阵
+			
+			varying vec4 v_color;//varying声明顶点颜色插值后变量
+			void main(){
+			// 平移矩阵Tx、旋转矩阵mx、旋转矩阵my连乘
+			   gl_Position = scale*Tx*mx*my*a_Position;
+			// 顶点法向量归一化
+			  vec3 normal = normalize((scale*Tx*mx*my*a_normal).xyz);
+			// 计算平行光方向向量和顶点法向量的点积
+			  float dot = max(dot(u_lightDirection, normal), 0.0);
+			// 计算平行光方向向量和顶点法向量的点积
+			  vec3 reflectedLight = u_lightColor * a_color.rgb * dot;
+			//颜色插值计算
+			  v_color = vec4(reflectedLight, a_color.a);
+			}
+		</script>
+		<!-- 片元着色器源码 -->
+		<script id="fragmentShader" type="x-shader/x-fragment">
+		    precision lowp float;//所有float类型数据的精度是lowp
+		    varying vec4 v_color;//接收顶点着色器中v_color数据
+		    void main(){
+		       gl_FragColor = v_color;
+		    }
+		</script>
+		<!-- 纹理贴图：顶点着色器程序 -->
+		<script id="textureVertexShader" type="x-shader/x-fragment">
+		    attribute vec4 a_Position;//顶点位置坐标
+		    attribute vec2 a_TexCoord;//纹理坐标
+		    varying vec2 v_TexCoord;//插值后纹理坐标
+			uniform mat4 scale;//缩放矩阵
+		    uniform mat4 mx;//绕x轴旋转矩阵
+		    uniform mat4 my;//绕y轴旋转矩阵
+			uniform mat4 Tx;//绕y轴旋转矩阵
+		    void main(){
+				gl_Position = scale* Tx*mx*my*a_Position;//逐顶点处理
+				v_TexCoord = a_TexCoord;//纹理坐标插值计算
+		    }
+		</script>
+		<!-- 纹理贴图：片元着色器程序 -->
+		<script id="textureFragShader" type="x-shader/x-fragment">
+			precision highp float;//所有float类型数据的精度是lowp
+			varying vec2 v_TexCoord;//接收插值后的纹理坐标
+			uniform sampler2D u_Sampler;//纹理图片像素数据
+			void main(){
+				//采集纹素，逐片元赋值像素值
+				gl_FragColor = texture2D(u_Sampler,v_TexCoord);
+			}
+		</script>
+		<script src="webgl.js"></script>
+	</body>
+</html>
